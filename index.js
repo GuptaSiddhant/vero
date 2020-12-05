@@ -1,41 +1,45 @@
 #!/usr/bin/env node
 // @ts-check
 
-const { log, clear } = console;
 const arg = process.argv[2];
 if (!arg) {
-  log("Salary is not provided");
+  console.error("Salary is not provided");
   process.exit(1);
 }
 const income = parseFloat(arg);
 const tax = calculateIncomeTaxPercentage(income);
 const employeePensionCost = calculatePensionCost(income);
 const employeeInsurance = calculateInsuranceCost(income);
-const taxPercentage = round(tax * 100);
-const inHandSalary = round(
-  income * (1 - tax) - employeeInsurance - employeePensionCost
-);
+const taxPercentage = tax * 100;
+const incomeTax = income * tax;
+const totalTax = incomeTax + employeeInsurance + employeePensionCost;
+const inHandSalary = income - totalTax;
 
 const intl = new Intl.NumberFormat(undefined, {
-  maximumSignificantDigits: 2,
+  maximumFractionDigits: 2,
+  minimumFractionDigits: 2,
   style: "currency",
   currency: "EUR",
 });
 
-clear();
-log("Income per month:", intl.format(income));
-log("Income tax percentage:", taxPercentage + "%");
-log("Total tax:", intl.format(income - inHandSalary));
-log("In-hand salary:", intl.format(inHandSalary));
+console.clear();
+console.table({
+  "Income per month": intl.format(income),
+  ["Income tax" + " (" + taxPercentage + "%)"]: intl.format(incomeTax),
+  "Pension cost": intl.format(employeePensionCost),
+  "Insurance cost": intl.format(employeeInsurance),
+  "Total tax": intl.format(totalTax),
+  "In-hand salary": intl.format(inHandSalary),
+});
 
 /** @param {number} income */
 function calculatePensionCost(income) {
-  return round(income * 0.0745);
+  return income * 0.0745;
 }
 
 /** @param {number} income */
 function calculateInsuranceCost(income) {
-  return round(income * 0.0125);
+  return income * 0.0125;
 }
 
 /** @param {number} income */
@@ -90,9 +94,4 @@ function calculateIncomeTax(yearlyIncome) {
 /** @param {number} yearlyIncome */
 function calculateMunicipalTax(yearlyIncome) {
   return yearlyIncome * 0.1983;
-}
-
-/** @param {number} num */
-function round(num) {
-  return Math.round(num * 100) / 100;
 }
