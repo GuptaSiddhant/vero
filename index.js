@@ -2,7 +2,12 @@
 // @ts-check
 
 const { log, clear } = console;
-const income = parseFloat(process.argv[2]) || 1;
+const arg = process.argv[2];
+if (!arg) {
+  log("Salary is not provided");
+  process.exit(1);
+}
+const income = parseFloat(arg);
 const tax = calculateIncomeTaxPercentage(income);
 const employeePensionCost = calculatePensionCost(income);
 const employeeInsurance = calculateInsuranceCost(income);
@@ -11,7 +16,7 @@ const inHandSalary = round(
   income * (1 - tax) - employeeInsurance - employeePensionCost
 );
 
-const intl = new Intl.NumberFormat("fi-FI", {
+const intl = new Intl.NumberFormat(undefined, {
   maximumSignificantDigits: 2,
   style: "currency",
   currency: "EUR",
