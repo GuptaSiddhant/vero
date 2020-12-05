@@ -7,11 +7,12 @@ const pensionMultiplier = 0.0745,
 
 //@ts-ignore
 const { argv, exit } = process;
-console.clear();
+console.log("");
 if (argv.length <= 2) {
   console.error("ERROR", "Income is not provided");
   exit(1);
 } else console.table(argv.slice(2).map(generateOutputObject));
+console.log("");
 
 /** @param {number} monthlyIncome */
 function generateOutputObject(monthlyIncome) {
