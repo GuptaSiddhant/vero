@@ -1,4 +1,4 @@
-#! /usr/env/bin node
+#!/usr/bin/env node
 // @ts-check
 
 const { log, clear } = console;
