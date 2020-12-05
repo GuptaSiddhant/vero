@@ -1,59 +1,63 @@
 #!/usr/bin/env node
+//@ts-check
 
-const arg = process.argv[2];
-if (!arg) {
-  console.error("Salary is not provided");
-  process.exit(1);
-}
-const income = parseFloat(arg);
-const tax = calculateIncomeTaxPercentage(income);
-const employeePensionCost = calculatePensionCost(income);
-const employeeInsurance = calculateInsuranceCost(income);
-const taxPercentage = tax * 100;
-const incomeTax = income * tax;
-const totalTax = incomeTax + employeeInsurance + employeePensionCost;
-const inHandSalary = income - totalTax;
+const pensionMultiplier = 0.0745,
+  insuranceMultiplier = 0.0125,
+  locale = undefined;
 
-const intl = new Intl.NumberFormat(undefined, {
-  maximumFractionDigits: 2,
-  minimumFractionDigits: 2,
-  style: "currency",
-  currency: "EUR",
-});
-
+//@ts-ignore
+const { argv, exit } = process;
 console.clear();
-console.table({
-  "Income per month": intl.format(income),
-  ["Income tax" + " (" + taxPercentage + "%)"]: intl.format(incomeTax),
-  "Pension cost": intl.format(employeePensionCost),
-  "Insurance cost": intl.format(employeeInsurance),
-  "Total tax": intl.format(totalTax),
-  "In-hand salary": intl.format(inHandSalary),
-});
+if (argv.length <= 2) {
+  console.error("ERROR", "Income is not provided");
+  exit(1);
+} else console.table(argv.slice(2).map(generateOutputObject));
 
-/** @param {number} income */
-function calculatePensionCost(income) {
-  return income * 0.0745;
+/** @param {number} monthlyIncome */
+function generateOutputObject(monthlyIncome) {
+  const incomeTaxMultiplier = calculateIncomeTaxPercentage(monthlyIncome),
+    employeePensionCost = monthlyIncome * pensionMultiplier,
+    employeeInsuranceCost = monthlyIncome * insuranceMultiplier,
+    incomeTax = monthlyIncome * incomeTaxMultiplier,
+    totalTax = incomeTax + employeeInsuranceCost + employeePensionCost,
+    totalTaxMultiplier = totalTax / monthlyIncome,
+    inHandSalary = monthlyIncome - totalTax,
+    intlCurrency = new Intl.NumberFormat(locale, {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+      style: "currency",
+      currency: "EUR",
+    }).format,
+    intlPercent = new Intl.NumberFormat(locale, {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2,
+      style: "percent",
+    }).format;
+
+  return {
+    "Income/month": intlCurrency(monthlyIncome),
+    "Income tax (%)": intlPercent(incomeTaxMultiplier),
+    "Income tax": intlCurrency(incomeTax),
+    [`Pension (${intlPercent(pensionMultiplier)})`]: intlCurrency(
+      employeePensionCost
+    ),
+    [`Insurance (${intlPercent(insuranceMultiplier)})`]: intlCurrency(
+      employeeInsuranceCost
+    ),
+    "Deduction (%)": intlPercent(totalTaxMultiplier),
+    Deduction: intlCurrency(totalTax),
+    "In-hand": intlCurrency(inHandSalary),
+  };
 }
 
-/** @param {number} income */
-function calculateInsuranceCost(income) {
-  return income * 0.0125;
-}
-
-/** @param {number} income */
-function calculateIncomeTaxPercentage(income) {
-  var yearlyIncome = calculateYearlyIncome(income);
-  var incomeTax = calculateIncomeTax(yearlyIncome);
-  var municipalTax = calculateMunicipalTax(yearlyIncome);
-  var yearlyTax = incomeTax + municipalTax;
-  var taxPercentage = Math.round((yearlyTax / yearlyIncome) * 1000) / 1000;
+/** @param {number} monthlyIncome */
+function calculateIncomeTaxPercentage(monthlyIncome) {
+  const yearlyIncome = monthlyIncome * 12 * 1.05;
+  const incomeTax = calculateIncomeTax(yearlyIncome);
+  const municipalTax = yearlyIncome * 0.1983;
+  const yearlyTax = incomeTax + municipalTax;
+  const taxPercentage = yearlyTax / yearlyIncome;
   return taxPercentage;
-}
-
-/** @param {number} income */
-function calculateYearlyIncome(income) {
-  return income * 12 * 1.05;
 }
 
 /** @param {number} yearlyIncome */
@@ -88,9 +92,4 @@ function calculateIncomeTax(yearlyIncome) {
     taxPayableLowestAmount +
     (yearlyIncome - taxableEarnedIncome) * taxOnIncomePercentage
   );
-}
-
-/** @param {number} yearlyIncome */
-function calculateMunicipalTax(yearlyIncome) {
-  return yearlyIncome * 0.1983;
 }
