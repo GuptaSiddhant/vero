@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-// @ts-check
 
 const arg = process.argv[2];
 if (!arg) {
