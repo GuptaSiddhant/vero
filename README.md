@@ -2,11 +2,15 @@
 
 Run in terminal ([NodeJS](https://nodejs.org/en/) required)
 
-    npx GuptaSiddhant/vero [monthly incomes]
+    npx guptasiddhant/vero [monthly incomes]
 
 Example:
 
+    # Sample values
+    npx guptasiddhant/vero
+
     # Single
-    npx GuptaSiddhant/vero 4000
+    npx guptasiddhant/vero 7500
+
     # Multiple
-    npx GuptaSiddhant/vero 3000 4000 5000
+    npx guptasiddhant/vero 3300 4400 5500
