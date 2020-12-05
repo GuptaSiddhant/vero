@@ -1,53 +1,83 @@
 #!/usr/bin/env node
+// Values from EnterFinland
 //@ts-check
 
+// Constants
 const pensionMultiplier = 0.0745,
-  insuranceMultiplier = 0.0125,
-  locale = undefined;
-
+  unEmpInsuranceMultiplier = 0.0125,
+  municipalTaxMultiplier = 0.1983;
+// Locale
+const locale = undefined,
+  localeFractions = { maximumFractionDigits: 2, minimumFractionDigits: 2 },
+  intlCurrency = new Intl.NumberFormat(locale, {
+    ...localeFractions,
+    style: "currency",
+    currency: "EUR",
+  }).format,
+  intlPercent = new Intl.NumberFormat(locale, {
+    ...localeFractions,
+    style: "percent",
+  }).format,
+  helpRow = generateOutput(
+    ...["", "", `(${intlPercent(pensionMultiplier)})`],
+    ...[`(${intlPercent(unEmpInsuranceMultiplier)})`, "", ""]
+  );
 //@ts-ignore
 const { argv, exit } = process;
-console.log("");
 if (argv.length <= 2) {
-  console.error("ERROR", "Income is not provided");
-  exit(1);
-} else console.table(argv.slice(2).map(generateOutputObject));
+  // Execute with auto-gen-values
+  // Error
+  // console.error("ERROR", "Income is not provided");
+  // exit(1);
+  const values = [];
+  for (let x = 1000; x <= 10000; x = x + 1000) values.push(x.toString());
+  console.table([helpRow, ...values.map(generateTaxObject)]);
+} else {
+  // Execute with user-value
+  console.table([helpRow, ...argv.slice(2).map(generateTaxObject)]);
+}
 console.log("");
 
-/** @param {number} monthlyIncome */
-function generateOutputObject(monthlyIncome) {
-  const incomeTaxMultiplier = calculateIncomeTaxPercentage(monthlyIncome),
-    employeePensionCost = monthlyIncome * pensionMultiplier,
-    employeeInsuranceCost = monthlyIncome * insuranceMultiplier,
+// -------
+// HELPERS
+// -------
+function generateOutput() {
+  return {
+    "Income/month": arguments[0],
+    "Income tax": arguments[1],
+    Pension: arguments[2],
+    Unemployment: arguments[3],
+    "Total deduction": arguments[4],
+    "In-hand": arguments[5],
+  };
+}
+
+/** @param {string} value */
+function generateTaxObject(value) {
+  if (Number.isNaN(parseInt(value))) return {};
+
+  const monthlyIncome = parseFloat(value),
+    incomeTaxMultiplier = calculateIncomeTaxPercentage(monthlyIncome),
+    pensionCost = monthlyIncome * pensionMultiplier,
+    unEmpInsuranceCost = monthlyIncome * unEmpInsuranceMultiplier,
     incomeTax = monthlyIncome * incomeTaxMultiplier,
-    totalTax = incomeTax + employeeInsuranceCost + employeePensionCost,
+    totalTax = incomeTax + unEmpInsuranceCost + pensionCost,
     totalTaxMultiplier = totalTax / monthlyIncome,
-    inHandSalary = monthlyIncome - totalTax,
-    intlCurrency = new Intl.NumberFormat(locale, {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 2,
-      style: "currency",
-      currency: "EUR",
-    }).format,
-    intlPercent = new Intl.NumberFormat(locale, {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 2,
-      style: "percent",
-    }).format;
+    inHandSalary = monthlyIncome - totalTax;
 
   return {
     "Income/month": intlCurrency(monthlyIncome),
-    "Income tax (%)": intlPercent(incomeTaxMultiplier),
-    "Income tax": intlCurrency(incomeTax),
-    [`Pension (${intlPercent(pensionMultiplier)})`]: intlCurrency(
-      employeePensionCost
-    ),
-    [`Insurance (${intlPercent(insuranceMultiplier)})`]: intlCurrency(
-      employeeInsuranceCost
-    ),
-    "Deduction (%)": intlPercent(totalTaxMultiplier),
-    Deduction: intlCurrency(totalTax),
-    "In-hand": intlCurrency(inHandSalary),
+    "Income tax":
+      intlCurrency(incomeTax) + " (" + intlPercent(incomeTaxMultiplier) + ")",
+    Pension: intlCurrency(pensionCost),
+    Unemployment: intlCurrency(unEmpInsuranceCost),
+    "Total deduction":
+      intlCurrency(totalTax) + " (" + intlPercent(totalTaxMultiplier) + ")",
+    "In-hand":
+      intlCurrency(inHandSalary) +
+      " (" +
+      intlPercent(1 - totalTaxMultiplier) +
+      ")",
   };
 }
 
@@ -55,7 +85,7 @@ function generateOutputObject(monthlyIncome) {
 function calculateIncomeTaxPercentage(monthlyIncome) {
   const yearlyIncome = monthlyIncome * 12 * 1.05;
   const incomeTax = calculateIncomeTax(yearlyIncome);
-  const municipalTax = yearlyIncome * 0.1983;
+  const municipalTax = yearlyIncome * municipalTaxMultiplier;
   const yearlyTax = incomeTax + municipalTax;
   const taxPercentage = yearlyTax / yearlyIncome;
   return taxPercentage;
